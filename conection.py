@@ -28,9 +28,3 @@ def server_request(server, database, sql):
 
     finally:
         return message
-
-
-result = server_request(server=r'GABRIEL\SQLSERVER', database='database',
-                        sql='select nome from clientes')
-
-print(result)
