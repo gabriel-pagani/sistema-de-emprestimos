@@ -1,30 +1,31 @@
-from pyodbc import connect
+from pyodbc import connect, Error
 
-
-def server_request(server, database, sql):
+def server_request(server: str, database: str, query_type: str, query: str) -> str:
     connection_data = f"DRIVER={{SQL Server}}; SERVER={server}; DATABASE={database};"
     message = ''
 
     try:
-        connection = connect(connection_data)
-        cursor = connection.cursor()
-        formatted_sql = sql.strip().upper()
-        cursor.execute(formatted_sql)
+        with connect(connection_data) as connection:
+            with connection.cursor() as cursor:
+                formatted_query = query.strip().upper()
+                cursor.execute(formatted_query)
 
-        if formatted_sql.startswith(("SELECT")):
-            result = cursor.fetchall()
-            for row in result:
-                print(row)
-        else:
-            connection.commit()
+                if query_type.lower() == 'view':
+                    result = cursor.fetchall()
+                    for row in result:
+                        print(row)
+                elif query_type.lower() == 'edit':
+                    connection.commit()
+                else:
+                    raise ValueError('Valor inválido para o tipo da consulta')
 
-        message = "\033[92mComando executado com sucesso!\033[m"
-        cursor.close()
-        connection.close()
+                message = "\033[92mComando executado com sucesso!\033[m"
 
+    except Error as e:
+        message = f"\033[91mErro de conexão:\033[m \033[90m{e}\033[m"
+    except ValueError as ve:
+        message = f"\033[91mErro de valor:\033[m \033[90m{ve}\033[m"
     except Exception as e:
-        message = (
-            f"\033[91mErro na conexão ou execução do comando:\033[m \033[90m{e}\033[m")
+        message = f"\033[91mErro inesperado:\033[m \033[90m{e}\033[m"
 
-    finally:
-        return message
+    return message
